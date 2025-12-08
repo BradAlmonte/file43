@@ -1,0 +1,520 @@
+/* ===========================
+   Base Layout
+=========================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #1a1a1f 0%, #050509 70%);
+  color: #e9e9ee;
+  padding: 40px 20px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Light mode */
+body.light-mode {
+  background: radial-gradient(circle at top, #f5f7ff 0%, #dcdff2 60%);
+  color: #25253a;
+}
+
+/* ===========================
+   Main Card
+=========================== */
+.container {
+  width: 100%;
+  max-width: 720px;
+  background: rgba(10, 10, 18, 0.9);
+  backdrop-filter: blur(12px);
+  padding: 28px 28px 24px;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  animation: fadeIn 0.6s ease;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.light-mode .container {
+  background: rgba(250, 250, 255, 0.96);
+  box-shadow: 0 16px 50px rgba(80, 80, 120, 0.25);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===========================
+   Header / Branding
+=========================== */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-chip {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 20% 20%, #39ffb8, #00b3ff 45%, #201875 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #050509;
+  font-weight: 800;
+  box-shadow: 0 0 18px rgba(0, 255, 200, 0.6);
+  font-size: 0.9rem;
+}
+
+.brand-text h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+body.light-mode .brand-text h1 {
+  color: #19192d;
+}
+
+.tagline {
+  font-size: 0.8rem;
+  color: #aeb0c7;
+}
+
+body.light-mode .tagline {
+  color: #5c5f7b;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(150, 150, 255, 0.5);
+  background: rgba(40, 40, 68, 0.9);
+  color: #e2e2ff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theme-toggle:hover {
+  background: rgba(60, 60, 96, 0.95);
+}
+
+body.light-mode .theme-toggle {
+  background: rgba(235, 236, 255, 0.9);
+  color: #33345a;
+}
+
+/* ===========================
+   Subtitle & Global Settings
+=========================== */
+.subtitle {
+  font-size: 0.95rem;
+  color: #b8b8c7;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+body.light-mode .subtitle {
+  color: #555777;
+}
+
+.global-settings {
+  text-align: left;
+  margin-bottom: 16px;
+}
+
+.global-settings label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.global-settings select {
+  margin-left: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #555575;
+  background: rgba(22, 22, 40, 0.9);
+  color: #e9e9ff;
+  font-size: 0.85rem;
+}
+
+body.light-mode .global-settings select {
+  background: #f6f6ff;
+  color: #333456;
+  border-color: #b5b9e0;
+}
+
+.global-hint {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #9a9ab3;
+}
+
+body.light-mode .global-hint {
+  color: #6d6f8f;
+}
+
+/* ===========================
+   Drag & Drop Zone
+=========================== */
+.drop-zone {
+  border: 2px dashed #555567;
+  padding: 24px;
+  border-radius: 18px;
+  background: rgba(30, 30, 42, 0.4);
+  transition: 0.25s ease;
+  cursor: pointer;
+  margin-bottom: 18px;
+}
+
+body.light-mode .drop-zone {
+  background: rgba(240, 241, 255, 0.85);
+  border-color: #b5b6d8;
+}
+
+.drop-zone:hover {
+  border-color: #7f7fff;
+  background: rgba(40, 40, 58, 0.55);
+}
+
+body.light-mode .drop-zone:hover {
+  background: rgba(230, 232, 255, 0.98);
+}
+
+.drop-zone.drag-over {
+  border-color: #8f8fff;
+  background: rgba(70, 70, 110, 0.55);
+  transform: scale(1.02);
+}
+
+body.light-mode .drop-zone.drag-over {
+  background: rgba(210, 215, 255, 0.95);
+}
+
+.drop-zone p {
+  margin: 4px 0;
+}
+
+.drop-zone .hint {
+  color: #9999aa;
+  font-size: 0.85rem;
+  margin-top: 6px;
+}
+
+body.light-mode .drop-zone .hint {
+  color: #7c7ea0;
+}
+
+/* ===========================
+   Controls & Buttons
+=========================== */
+.controls {
+  margin-top: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 9px 16px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #5151ff, #6a53ff);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(80, 80, 255, 0.4);
+  transition: 0.2s;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(80, 80, 255, 0.5);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #d7d7e2;
+  border: 1px solid #555;
+  box-shadow: none;
+}
+
+body.light-mode button.secondary {
+  background: rgba(240, 241, 255, 0.9);
+  color: #333456;
+  border-color: #b5b8df;
+}
+
+button.secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+button.danger {
+  border-color: #ff6f6f;
+  color: #ffb0b0;
+}
+
+/* loading spinner on Start button */
+button.loading {
+  position: relative;
+  padding-right: 32px;
+}
+
+button.loading::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-top-color: transparent;
+  transform: translateY(-50%);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+/* ===========================
+   File List
+=========================== */
+.file-list {
+  margin-top: 10px;
+  text-align: left;
+}
+
+.file-row {
+  background: rgba(22, 22, 32, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  animation: fadeIn 0.35s ease;
+  transition: border 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+body.light-mode .file-row {
+  background: rgba(244, 246, 255, 0.95);
+  border-color: rgba(40, 40, 80, 0.1);
+}
+
+.file-row.active {
+  border-color: #8f8fff;
+  box-shadow: 0 0 0 1px rgba(143, 143, 255, 0.3),
+    0 0 18px rgba(143, 143, 255, 0.35);
+}
+
+.file-row.error {
+  border-color: #ff7777;
+}
+
+/* ===========================
+   File Row Content
+=========================== */
+.file-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-name {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+body.light-mode .file-name {
+  color: #23233a;
+}
+
+.file-status {
+  font-size: 0.82rem;
+  color: #b6b6c9;
+}
+
+body.light-mode .file-status {
+  color: #5c5f7c;
+}
+
+.file-row.error .file-status {
+  color: #ff8b8b;
+}
+
+/* Per-file format select */
+.format-select {
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #4d4d6a;
+  background: rgba(15, 15, 35, 0.9);
+  color: #e5e5ff;
+  font-size: 0.8rem;
+}
+
+body.light-mode .format-select {
+  background: #f2f2ff;
+  color: #333456;
+  border-color: #c2c5e5;
+}
+
+/* ===========================
+   Progress Bar
+=========================== */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #2d2d3b;
+  border-radius: 6px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+body.light-mode .progress-bar {
+  background: #dee0f3;
+}
+
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #5a5aff, #39ffe6);
+  transition: width 0.25s ease;
+}
+
+/* ===========================
+   File Actions
+=========================== */
+.file-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.download-link {
+  font-size: 0.85rem;
+  color: #8f8fff;
+  text-decoration: none;
+}
+
+.download-link:hover {
+  text-decoration: underline;
+}
+
+.retry-btn {
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid #ffb347;
+  background: rgba(255, 179, 71, 0.1);
+  color: #ffce85;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.retry-btn:hover {
+  background: rgba(255, 179, 71, 0.2);
+}
+
+.remove-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #9090a5;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.remove-btn:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+body.light-mode .remove-btn:hover {
+  color: #1f1f36;
+}
+
+.hidden {
+  display: none;
+}
+
+/* ===========================
+   Global Status & Summary
+=========================== */
+.global-status {
+  text-align: center;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  opacity: 0.9;
+}
+
+.global-status.success {
+  color: #7cffc4;
+}
+
+.global-status.error {
+  color: #ff6f6f;
+}
+
+.global-status.info {
+  color: #a0a0ff;
+}
+
+.summary {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  text-align: left;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+  color: #b8b8c9;
+}
+
+body.light-mode .summary {
+  border-top-color: rgba(30, 30, 70, 0.15);
+  color: #555777;
+}
+
+.summary a {
+  color: #8f8fff;
+  text-decoration: none;
+}
+
+.summary a:hover {
+  text-decoration: underline;
+}
