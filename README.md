@@ -4,8 +4,8 @@ File43 is a local-only media converter app built with Electron + Node + FFmpeg.
 
 - Drag & drop up to 20 files
 - Converts sequentially (no overload)
-- Supports multiple input formats: **MP4, MOV, MKV, AVI, WEBM, MP3, WAV, M4A, FLAC, OGG**
-- Supports multiple output formats: **MP3, WAV, AAC, FLAC, OGG, M4A**
+- Input formats Supported: **MP4**
+- Output formats Supported: **MP3** 
 - Batch output format + per-file override
 - Individual downloads or “Download All as ZIP”
 - Retry failed conversions
@@ -13,6 +13,9 @@ File43 is a local-only media converter app built with Electron + Node + FFmpeg.
 - Summary: total files, successful, failed, time taken, link to output folder
 - Runs completely on your machine (no cloud)
 
+
+In future updates I will make it so these Inputs work aswell: **MOV, MKV, AVI, WEBM, MP3, WAV, M4A, FLAC, OGG**
+In future updates I will make it so these Outputs work aswell: **WAV, AAC, FLAC, OGG, M4A**
 ---
 
 ## Requirements
