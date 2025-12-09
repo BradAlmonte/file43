@@ -28,8 +28,15 @@ FFmpeg is bundled automatically via [`@ffmpeg-installer/ffmpeg`], so you don’t
 Clone the repo:
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/file43.git
+TLDR just copy the next four lines to open the app from terminal.
+
+git clone https://github.com/BradAlmonte/file43.git
 cd file43
+npm install
+npm run app
+
+
+
 Install dependencies:
 
 npm install
