@@ -4,72 +4,177 @@
   <meta charset="UTF-8" />
   <title>File43 — Media Converter</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="file43-icon.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <!-- Header with branding + theme toggle -->
-    <div class="header-row">
-      <div class="brand">
-        <div class="logo-chip">43</div>
-        <div class="brand-text">
-          <h1>File43</h1>
-          <p class="tagline">Queue, convert, download — on your terms.</p>
-        </div>
+  <div class="app-shell">
+    <!-- Custom Title Bar (drag region for Electron) -->
+    <div class="title-bar">
+      <div class="title-left drag-region">
+        <div class="title-icon"></div>
+        <span class="title-text">File43</span>
       </div>
-      <button id="themeToggle" class="theme-toggle">Dark</button>
+      <div class="title-right">
+        <button id="settingsBtn" class="ghost-btn">Settings</button>
+        <button id="aboutBtn" class="ghost-btn">About</button>
+      </div>
     </div>
 
-    <p class="subtitle">
-      Drag &amp; drop up to 20 media files. Set a batch output format or override per file. Convert sequentially and download individually or as a ZIP.
+    <div class="container">
+      <!-- Header with branding + theme toggle -->
+      <div class="header-row">
+        <div class="brand">
+          <div class="logo-chip">43</div>
+          <div class="brand-text">
+            <h1>File43</h1>
+            <p class="tagline">Queue, convert, download — on your terms.</p>
+          </div>
+        </div>
+        <button id="themeToggle" class="theme-toggle">Dark</button>
+      </div>
+
+      <p class="subtitle">
+        Drag &amp; drop up to 20 media files. Set a batch output format or override per file. Convert sequentially and download individually or as a ZIP.
+      </p>
+
+      <!-- Global batch settings -->
+      <div class="global-settings">
+        <label for="globalFormatSelect">Batch output format:</label>
+        <select id="globalFormatSelect">
+          <option value="mp3">MP3 (audio)</option>
+          <option value="wav">WAV (audio)</option>
+          <option value="aac">AAC (audio)</option>
+          <option value="flac">FLAC (audio)</option>
+          <option value="ogg">OGG (audio)</option>
+          <option value="m4a">M4A (audio)</option>
+        </select>
+
+        <div class="naming-row">
+          <label for="namingPatternSelect">Naming rule:</label>
+          <select id="namingPatternSelect">
+            <option value="original">originalName.ext</option>
+            <option value="suffixConverted">originalName_converted.ext</option>
+            <option value="dateSuffix">originalName_YYYY-MM-DD.ext</option>
+            <option value="indexPrefix">index_originalName.ext</option>
+          </select>
+        </div>
+
+        <p class="global-hint">
+          Inputs: MP4, MOV, MKV, AVI, WEBM, MP3, WAV, M4A, FLAC, OGG. Outputs: MP3, WAV, AAC, FLAC, OGG, M4A.
+          Naming rules apply to all converted files in this batch.
+        </p>
+      </div>
+
+      <!-- Drag & Drop Zone -->
+      <div id="dropZone" class="drop-zone">
+        <p><strong>Drop files here</strong> or click to select</p>
+        <p class="hint">Max 20 files per batch</p>
+        <input
+          type="file"
+          id="fileInput"
+          accept="video/*,audio/*,.mp4,.mov,.mkv,.avi,.webm,.mp3,.wav,.m4a,.flac,.ogg"
+          multiple
+          hidden
+        />
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button id="startBtn">Start Conversion</button>
+        <button id="downloadAllBtn" class="secondary">Download All as ZIP</button>
+        <button id="openOutputBtn" class="secondary">Open Output Folder</button>
+        <button id="clearCompletedBtn" class="secondary">Clear Completed</button>
+        <button id="clearQueueBtn" class="secondary danger">Clear Queue</button>
+      </div>
+
+      <!-- File list + progress -->
+      <div id="fileList" class="file-list">
+        <!-- Rows added dynamically -->
+      </div>
+
+      <div id="globalStatus" class="global-status"></div>
+
+      <!-- Summary -->
+      <div id="summary" class="summary"></div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2>Settings</h2>
+      <div class="modal-section">
+        <label>
+          Theme:
+          <select id="settingsTheme">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="modal-section">
+        <label>
+          Default output format:
+          <select id="settingsDefaultFormat">
+            <option value="mp3">MP3</option>
+            <option value="wav">WAV</option>
+            <option value="aac">AAC</option>
+            <option value="flac">FLAC</option>
+            <option value="ogg">OGG</option>
+            <option value="m4a">M4A</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="modal-section checkbox-row">
+        <label>
+          <input type="checkbox" id="settingsAutoOpenOutput" />
+          Auto-open output folder after batch
+        </label>
+      </div>
+
+      <div class="modal-footer">
+        <button id="settingsCancelBtn" class="secondary">Cancel</button>
+        <button id="settingsSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- About Modal -->
+  <!-- About Modal -->
+<div id="aboutModal" class="modal-backdrop hidden">
+  <div class="modal">
+    <div class="about-header">
+      <div class="about-icon"></div>
+      <div>
+        <h2>About File43</h2>
+        <p class="about-subtitle">Local media converter for your own machine.</p>
+      </div>
+    </div>
+
+    <p class="about-text">
+      File43 is a local-only media converter built with Electron, Node, and FFmpeg.
     </p>
 
-    <!-- Global batch settings -->
-    <div class="global-settings">
-      <label for="globalFormatSelect">Batch output format:</label>
-      <select id="globalFormatSelect">
-        <option value="mp3">MP3 (audio)</option>
-        <option value="wav">WAV (audio)</option>
-        <option value="aac">AAC (audio)</option>
-        <option value="flac">FLAC (audio)</option>
-        <option value="ogg">OGG (audio)</option>
-        <option value="m4a">M4A (audio)</option>
-      </select>
-      <p class="global-hint">
-        Input formats supported: MP4, MOV, MKV, AVI, WEBM, MP3, WAV, M4A, FLAC, OGG. You can override the output format per file below.
-      </p>
+    <p class="about-text">
+      Version: <span id="aboutVersion">1.0.0</span><br />
+      GitHub:
+      <a href="https://github.com/BradAlmonte/file43" target="_blank">
+        BradAlmonte/file43
+      </a>
+    </p>
+
+    <p id="updateStatus" class="about-text"></p>
+
+    <div class="modal-footer">
+      <button id="checkUpdatesBtn" class="secondary">Check for updates</button>
+      <button id="aboutCloseBtn">Close</button>
     </div>
-
-    <!-- Drag & Drop Zone -->
-    <div id="dropZone" class="drop-zone">
-      <p><strong>Drop files here</strong> or click to select</p>
-      <p class="hint">Max 20 files per batch</p>
-      <input
-        type="file"
-        id="fileInput"
-        accept="video/*,audio/*,.mp4,.mov,.mkv,.avi,.webm,.mp3,.wav,.m4a,.flac,.ogg"
-        multiple
-        hidden
-      />
-    </div>
-
-    <!-- Controls -->
-    <div class="controls">
-      <button id="startBtn">Start Conversion</button>
-      <button id="downloadAllBtn" class="secondary">Download All as ZIP</button>
-      <button id="clearQueueBtn" class="secondary danger">Clear Queue</button>
-    </div>
-
-    <!-- File list + progress -->
-    <div id="fileList" class="file-list">
-      <!-- Rows added dynamically -->
-    </div>
-
-    <div id="globalStatus" class="global-status"></div>
-
-    <!-- Summary -->
-    <div id="summary" class="summary"></div>
   </div>
+</div>
+
 
   <script src="script.js"></script>
 </body>

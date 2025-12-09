@@ -1,4 +1,4 @@
-// File43 multi-file frontend with formats, theme, queue controls, retry, and summary
+// File43 multi-file frontend with formats, settings, naming, queue controls, retry, and summary
 
 console.log("File43 multi-file script loaded");
 
@@ -7,21 +7,70 @@ const fileInput = document.getElementById("fileInput");
 const startBtn = document.getElementById("startBtn");
 const downloadAllBtn = document.getElementById("downloadAllBtn");
 const clearQueueBtn = document.getElementById("clearQueueBtn");
+const clearCompletedBtn = document.getElementById("clearCompletedBtn");
+const openOutputBtn = document.getElementById("openOutputBtn");
 const fileListEl = document.getElementById("fileList");
 const globalStatusEl = document.getElementById("globalStatus");
 const summaryEl = document.getElementById("summary");
 const globalFormatSelect = document.getElementById("globalFormatSelect");
+const namingPatternSelect = document.getElementById("namingPatternSelect");
 const themeToggle = document.getElementById("themeToggle");
+
+// Settings + About elements
+const settingsBtn = document.getElementById("settingsBtn");
+const aboutBtn = document.getElementById("aboutBtn");
+const settingsModal = document.getElementById("settingsModal");
+const aboutModal = document.getElementById("aboutModal");
+const settingsTheme = document.getElementById("settingsTheme");
+const settingsDefaultFormat = document.getElementById("settingsDefaultFormat");
+const settingsAutoOpenOutput = document.getElementById("settingsAutoOpenOutput");
+const settingsSaveBtn = document.getElementById("settingsSaveBtn");
+const settingsCancelBtn = document.getElementById("settingsCancelBtn");
+const aboutCloseBtn = document.getElementById("aboutCloseBtn");
+const aboutVersionLabel = document.getElementById("aboutVersion");
+const updateStatusEl = document.getElementById("updateStatus");
+const checkUpdatesBtn = document.getElementById("checkUpdatesBtn");
+
+// read app version from URL (?v=1.0.0) passed by Electron
+const urlParams = new URLSearchParams(window.location.search);
+const currentVersion = urlParams.get("v") || "1.0.0";
+if (aboutVersionLabel) {
+  aboutVersionLabel.textContent = currentVersion;
+}
 
 const MAX_FILES = 20;
 const allowedOutputFormats = ["mp3", "wav", "aac", "flac", "ogg", "m4a"];
 const allowedInputExts = [".mp4", ".mov", ".mkv", ".avi", ".webm", ".mp3", ".wav", ".m4a", ".flac", ".ogg"];
 
-let fileQueue = []; // { id, file, status, downloadUrl, errorMessage, format }
+let fileQueue = []; // { id, file, status, downloadUrl, errorMessage, format, index }
 let isProcessing = false;
 let batchStartTime = null;
 
-/* ========== THEME ========== */
+// ========== SETTINGS ==========
+const DEFAULT_SETTINGS = {
+  theme: "dark",
+  defaultFormat: "mp3",
+  autoOpenOutput: false
+};
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem("file43Settings");
+    if (!raw) return { ...DEFAULT_SETTINGS };
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_SETTINGS, ...parsed };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+function saveSettings(settings) {
+  localStorage.setItem("file43Settings", JSON.stringify(settings));
+}
+
+let currentSettings = loadSettings();
+
+// ========== THEME ==========
 function applyTheme(theme) {
   if (theme === "light") {
     document.body.classList.add("light-mode");
@@ -30,16 +79,12 @@ function applyTheme(theme) {
     document.body.classList.remove("light-mode");
     themeToggle.textContent = "Dark";
   }
-  localStorage.setItem("file43Theme", theme);
+  currentSettings.theme = theme;
+  saveSettings(currentSettings);
 }
 
 function initTheme() {
-  const saved = localStorage.getItem("file43Theme");
-  if (saved === "light" || saved === "dark") {
-    applyTheme(saved);
-  } else {
-    applyTheme("dark");
-  }
+  applyTheme(currentSettings.theme);
 }
 
 themeToggle.addEventListener("click", () => {
@@ -49,9 +94,18 @@ themeToggle.addEventListener("click", () => {
 
 initTheme();
 
-/* ========== BUTTON STATE / GLOBAL STATUS ========== */
+// also sync global format to settings default
+if (allowedOutputFormats.includes(currentSettings.defaultFormat)) {
+  globalFormatSelect.value = currentSettings.defaultFormat;
+}
+
+// ========== BUTTON STATE / GLOBAL STATUS ==========
 function hasCompleted() {
   return fileQueue.some((item) => item.status === "done");
+}
+
+function hasCompletedItems() {
+  return hasCompleted();
 }
 
 function recalcButtons() {
@@ -59,6 +113,7 @@ function recalcButtons() {
     startBtn.disabled = true;
     clearQueueBtn.disabled = true;
     downloadAllBtn.disabled = !hasCompleted();
+    clearCompletedBtn.disabled = true;
     startBtn.classList.add("loading");
   } else {
     startBtn.classList.remove("loading");
@@ -66,6 +121,7 @@ function recalcButtons() {
     startBtn.disabled = !hasFiles;
     clearQueueBtn.disabled = !hasFiles;
     downloadAllBtn.disabled = !hasCompleted();
+    clearCompletedBtn.disabled = !hasCompletedItems();
   }
 }
 
@@ -75,7 +131,7 @@ function setGlobalStatus(message, type = "") {
   if (type) globalStatusEl.classList.add(type);
 }
 
-/* ========== SUMMARY ========== */
+// ========== SUMMARY ==========
 function formatDuration(ms) {
   const totalSeconds = Math.round(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
@@ -106,7 +162,7 @@ function updateSummary() {
   `;
 }
 
-/* ========== ROW HELPERS ========== */
+// ========== ROW HELPERS ==========
 function createFileRow(item) {
   const row = document.createElement("div");
   row.className = "file-row";
@@ -157,6 +213,8 @@ function refreshPerFileDefaultLabels() {
 }
 
 globalFormatSelect.addEventListener("change", () => {
+  currentSettings.defaultFormat = globalFormatSelect.value;
+  saveSettings(currentSettings);
   refreshPerFileDefaultLabels();
 });
 
@@ -228,7 +286,9 @@ function markFileSuccess(item) {
   updateSummary();
 }
 
-/* ========== FILE ADDING / QUEUE ========== */
+// ========== FILE ADDING / QUEUE ==========
+let nextIndex = 1;
+
 function addFilesToQueue(files) {
   const currentCount = fileQueue.length;
   const remainingSlots = MAX_FILES - currentCount;
@@ -256,11 +316,12 @@ function addFilesToQueue(files) {
     const id = Date.now() + Math.random();
     const item = {
       id,
+      index: nextIndex++, // used for index naming pattern
       file,
       status: "queued",
       downloadUrl: null,
       errorMessage: null,
-      format: null, // per-file output, null => use global
+      format: null
     };
     fileQueue.push(item);
     createFileRow(item);
@@ -277,7 +338,7 @@ function addFilesToQueue(files) {
   recalcButtons();
 }
 
-/* ========== DRAG & DROP & CLICK ========== */
+// ========== DRAG & DROP & CLICK ==========
 dropZone.addEventListener("click", () => {
   fileInput.click();
 });
@@ -306,17 +367,17 @@ dropZone.addEventListener("drop", (e) => {
   }
 });
 
-/* ========== CONVERSION LOGIC (SEQUENTIAL) ========== */
+// ========== CONVERSION LOGIC (SEQUENTIAL) ==========
 function getTargetFormatForItem(item) {
   if (item.format && allowedOutputFormats.includes(item.format)) {
     return item.format;
   }
   const globalFmt = globalFormatSelect.value;
   if (allowedOutputFormats.includes(globalFmt)) return globalFmt;
-  return "mp3";
+  return currentSettings.defaultFormat || "mp3";
 }
 
-async function convertFile(item) {
+async function convertFile(item, namingPattern) {
   const row = getRowById(item.id);
   if (row) {
     row.classList.remove("error");
@@ -327,11 +388,13 @@ async function convertFile(item) {
   const format = getTargetFormatForItem(item);
 
   updateRowStatus(item.id, `Converting to ${format.toUpperCase()}...`);
-  updateRowProgress(item.id, 20);
+  updateRowProgress(item.id, 15);
 
   const formData = new FormData();
   formData.append("video", item.file);
   formData.append("format", format);
+  formData.append("namingPattern", namingPattern);
+  formData.append("index", item.index.toString());
 
   try {
     const res = await fetch("/convert", {
@@ -365,6 +428,8 @@ async function processQueueSequentially() {
     return;
   }
 
+  const namingPattern = namingPatternSelect.value || "original";
+
   isProcessing = true;
   batchStartTime = performance.now();
   setGlobalStatus("Converting files one by one…", "info");
@@ -374,7 +439,9 @@ async function processQueueSequentially() {
   for (const item of fileQueue) {
     if (item.status === "done") continue;
     setActiveRow(item.id);
-    await convertFile(item);
+    // NOTE: progress bar is still basic (0→15→100).
+    // Real FFmpeg streaming progress would require a streaming API or websockets.
+    await convertFile(item, namingPattern);
   }
 
   setActiveRow(null);
@@ -394,9 +461,18 @@ async function processQueueSequentially() {
     );
   }
   updateSummary();
+
+  // Auto-open output folder if setting is enabled
+  if (currentSettings.autoOpenOutput) {
+    try {
+      await fetch("/open-output", { method: "POST" });
+    } catch (e) {
+      console.warn("Failed to auto-open output folder:", e);
+    }
+  }
 }
 
-/* ========== DOWNLOAD ALL AS ZIP ========== */
+// ========== DOWNLOAD ALL AS ZIP ==========
 async function downloadAllAsZip() {
   const completed = fileQueue.filter(
     (item) => item.status === "done" && item.downloadUrl
@@ -448,7 +524,7 @@ async function downloadAllAsZip() {
   }
 }
 
-/* ========== QUEUE CONTROLS (clear, remove, retry) ========== */
+// ========== QUEUE CONTROLS (clear, remove, retry, clear completed) ==========
 clearQueueBtn.addEventListener("click", () => {
   if (isProcessing) {
     setGlobalStatus(
@@ -462,6 +538,39 @@ clearQueueBtn.addEventListener("click", () => {
   fileListEl.innerHTML = "";
   setGlobalStatus("Queue cleared.", "info");
   batchStartTime = null;
+  updateSummary();
+  recalcButtons();
+});
+
+clearCompletedBtn.addEventListener("click", () => {
+  if (isProcessing) {
+    setGlobalStatus(
+      "Wait for the current conversion to finish before clearing completed files.",
+      "error"
+    );
+    return;
+  }
+
+  const remaining = [];
+  const remainingIds = new Set();
+
+  fileQueue.forEach((item) => {
+    if (item.status !== "done") {
+      remaining.push(item);
+      remainingIds.add(String(item.id));
+    }
+  });
+
+  fileQueue = remaining;
+
+  fileListEl.querySelectorAll(".file-row").forEach((row) => {
+    const id = row.dataset.id;
+    if (!remainingIds.has(String(id))) {
+      row.remove();
+    }
+  });
+
+  setGlobalStatus("Completed files cleared from queue.", "info");
   updateSummary();
   recalcButtons();
 });
@@ -515,12 +624,14 @@ fileListEl.addEventListener("click", (e) => {
     updateRowStatus(item.id, "Queued (retrying…)");
     updateRowProgress(item.id, 0);
 
+    const namingPattern = namingPatternSelect.value || "original";
+
     isProcessing = true;
     recalcButtons();
     setActiveRow(item.id);
 
     (async () => {
-      await convertFile(item);
+      await convertFile(item, namingPattern);
       isProcessing = false;
       setActiveRow(null);
 
@@ -542,7 +653,133 @@ fileListEl.addEventListener("click", (e) => {
   }
 });
 
-/* ========== BUTTON HANDLERS ========== */
+// ========== OPEN OUTPUT BUTTON ==========
+openOutputBtn.addEventListener("click", async () => {
+  try {
+    const res = await fetch("/open-output", { method: "POST" });
+    if (!res.ok) throw new Error();
+    setGlobalStatus("Opened output folder.", "success");
+  } catch (err) {
+    console.error("Error opening output folder:", err);
+    setGlobalStatus("Couldn't open output folder.", "error");
+  }
+});
+
+// ========== SETTINGS MODAL ==========
+function openSettingsModal() {
+  settingsTheme.value = currentSettings.theme;
+  settingsDefaultFormat.value = currentSettings.defaultFormat;
+  settingsAutoOpenOutput.checked = currentSettings.autoOpenOutput;
+  settingsModal.classList.remove("hidden");
+}
+
+function closeSettingsModal() {
+  settingsModal.classList.add("hidden");
+}
+
+settingsBtn.addEventListener("click", () => {
+  openSettingsModal();
+});
+
+settingsCancelBtn.addEventListener("click", () => {
+  closeSettingsModal();
+});
+
+settingsSaveBtn.addEventListener("click", () => {
+  currentSettings.theme = settingsTheme.value;
+  currentSettings.defaultFormat = settingsDefaultFormat.value;
+  currentSettings.autoOpenOutput = settingsAutoOpenOutput.checked;
+
+  saveSettings(currentSettings);
+
+  // Apply theme + default format immediately
+  applyTheme(currentSettings.theme);
+  globalFormatSelect.value = currentSettings.defaultFormat;
+
+  closeSettingsModal();
+});
+
+// ========== ABOUT MODAL ==========
+function compareSemver(a, b) {
+  const pa = a.split(".").map((n) => parseInt(n, 10) || 0);
+  const pb = b.split(".").map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const da = pa[i] || 0;
+    const db = pb[i] || 0;
+    if (da > db) return 1;
+    if (da < db) return -1;
+  }
+  return 0;
+}
+
+async function checkForUpdates() {
+  if (!updateStatusEl) return;
+  updateStatusEl.textContent = "Checking for updates…";
+
+  try {
+    const res = await fetch(
+      "https://api.github.com/repos/BradAlmonte/file43/releases/latest",
+      {
+        headers: {
+          Accept: "application/vnd.github+json"
+        }
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("GitHub API error");
+    }
+
+    const data = await res.json();
+    const latestTagRaw = data.tag_name || data.name || "";
+    const latestVersion = latestTagRaw.replace(/^v/i, "").trim();
+
+    if (!latestVersion) {
+      updateStatusEl.textContent =
+        "Could not determine latest version. Check GitHub releases.";
+      return;
+    }
+
+    const cmp = compareSemver(latestVersion, currentVersion);
+
+    if (cmp > 0) {
+      updateStatusEl.innerHTML = `
+        New version available: <strong>v${latestVersion}</strong> (you have v${currentVersion}).<br/>
+        <a href="${data.html_url}" target="_blank">Open latest release on GitHub</a>
+      `;
+    } else if (cmp === 0) {
+      updateStatusEl.textContent = `You're up to date (v${currentVersion}).`;
+    } else {
+      updateStatusEl.textContent = `You are running a newer version (v${currentVersion}) than the latest tagged release (v${latestVersion}).`;
+    }
+  } catch (err) {
+    console.error("Update check failed:", err);
+    updateStatusEl.textContent =
+      "Could not check for updates. Make sure you’re online.";
+  }
+}
+
+
+aboutBtn.addEventListener("click", () => {
+  aboutModal.classList.remove("hidden");
+});
+
+aboutCloseBtn.addEventListener("click", () => {
+  aboutModal.classList.add("hidden");
+});
+
+checkUpdatesBtn.addEventListener("click", () => {
+  if (updateStatusEl) {
+    updateStatusEl.textContent = "Opening latest release on GitHub…";
+  }
+  window.open(
+    "https://github.com/BradAlmonte/file43/releases/latest",
+    "_blank"
+  );
+});
+
+
+// ========== MAIN BUTTON HANDLERS ==========
 startBtn.addEventListener("click", () => {
   processQueueSequentially();
 });
